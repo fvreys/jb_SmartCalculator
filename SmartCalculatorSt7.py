@@ -2,13 +2,12 @@
 from typing import Any
 from collections import deque
 
-global memory   # All variables
-global commands, valid_operators
+memory = {}
 commands = ["/exit", "/help"]
 valid_operators = ["+", "-", "*", "/", "(", ")"]   # Includes parentheses '(' and ')'
+# TO DO: Make OOP version
 
 
-# TO DO: 1/ Simplify check expression 2/ OOP
 # Command
 def check_command(instruction: str) -> bool:
     """ Check for command in input """
@@ -108,23 +107,8 @@ def has_lower_precedence(op1: str, op2: str):
         return False
 
 
-def check_expression(input_string: str) -> None:
-    """ Evaluate expression and provide result """
-    # Expression can be split with and without spaces in expression
-    # and remove duplicate '+' or '-'
-    # TO DO: 1/ Make simpler 2/ split in different functions
-    input_reduced: str = input_string.replace(" ", "")
-    input_reduced = input_reduced.replace("+++", "+").replace("++", "+")
-    input_reduced = input_reduced.replace("---", "-").replace("--", "+")
-    if "**" in input_reduced or "//" in input_reduced:
-        print(f"Invalid expression")
-        return None
-    input_spaces: str = ""
-    for x in input_reduced:
-        input_spaces += x if x not in valid_operators else f" {x} "
-    formula: list = input_spaces.split()
-
-    # Infix to postfix
+def parse_to_postfix(formula: list) -> list:
+    """ returns: Change infix expression 'formula' into a postfix (or RPN) expression """
     my_stack: deque[Any] = deque()
     postfix: list = []
     for elem in formula:
@@ -164,27 +148,30 @@ def check_expression(input_string: str) -> None:
         else:
             print(f"Invalid expression")
 
-    # Postfix to result
+    return postfix
+
+
+def calculate_postfix(postfix_result: list) -> None:
     my_stack2: deque[Any] = deque()
 
-    for elem2 in postfix:
-        if elem2.isdecimal():
-            my_stack2.append(elem2)
-        elif elem2.isalpha():
-            if elem2 in memory.keys():
-                my_stack2.append(memory[elem2])
+    for el in postfix_result:
+        if el.isdecimal():
+            my_stack2.append(el)
+        elif el.isalpha():
+            if el in memory.keys():
+                my_stack2.append(memory[el])
             else:  # Should be covered in show_variable
                 print(f"Unknown variable")
-        elif elem2 in valid_operators:
+        elif el in valid_operators:
             nr1, nr2 = my_stack2.pop(), my_stack2.pop()
             result_operation: int = 0
-            if elem2 == "+":
+            if el == "+":
                 result_operation = int(nr2) + int(nr1)
-            elif elem2 == "-":
+            elif el == "-":
                 result_operation = int(nr2) - int(nr1)
-            elif elem2 == "*":
+            elif el == "*":
                 result_operation = int(nr2) * int(nr1)
-            elif elem2 == "/":
+            elif el == "/":
                 try:
                     result_operation = int(nr2) // int(nr1)
                 except ZeroDivisionError:
@@ -196,13 +183,36 @@ def check_expression(input_string: str) -> None:
     # Result is last element in stack
     if len(my_stack2) > 0:
         print(my_stack2.pop())  # Result should be integer
+
+    return None
+
+
+def check_expression(input_string: str) -> None:
+    """ Evaluate expression and provide result """
+    # Expression can be split with and without spaces in expression
+    # and remove duplicate '+' or '-'
+    input_reduced: str = input_string.replace(" ", "")
+    input_reduced = input_reduced.replace("+++", "+").replace("++", "+")
+    input_reduced = input_reduced.replace("---", "-").replace("--", "+")
+    if "**" in input_reduced or "//" in input_reduced:
+        print(f"Invalid expression")
+        return None
+    input_spaces: str = ""
+    for x in input_reduced:
+        input_spaces += x if x not in valid_operators else f" {x} "
+    infix_expression: list = input_spaces.split()
+
+    # Infix to postfix
+    postfix: list = parse_to_postfix(infix_expression)
+
+    # Postfix to result
+    calculate_postfix(postfix)
+
     return None
 
 
 def smart_calculator():
     """ Main program """
-    global memory
-    memory = {}  # Initialize empty memory of variables
 
     while True:
         entry: str = input()
